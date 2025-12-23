@@ -1,0 +1,76 @@
+trigger:
+- main
+
+variables:
+  vmImageName: 'ubuntu-latest'
+  projectDirectory: './src/WorkerContagem/'
+  #dockerHardenedImage: 'dhi.io/python:3.13'
+  #commonImage: 'python:3.13'
+  #dockerHardenedImage: 'dhi.io/dotnet:10.0.101-sdk'
+  #commonImage: 'mcr.microsoft.com/dotnet/sdk:10.0.101'
+  #dockerHardenedImage: 'dhi.io/golang:1.24'
+  #commonImage: 'golang:1.24'
+  dockerHardenedImage: 'dhi.io/node:24'
+  commonImage: 'node:24'
+
+stages:
+- stage: ImageScanning
+  displayName: Image Scanning stage
+  variables:
+  - group: docker-scout
+  jobs:
+  - job: ImageScanning
+    displayName: ImageScanning
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - script: |
+        docker pull $(commonImage)
+      displayName: Download common image -- Baixar imagem convencional
+    - script: |
+        echo $(DOCKER_HUB_USER)
+        echo $(DOCKER_HUB_PAT) | docker login dhi.io -u $(DOCKER_HUB_USER) --password-stdin
+      displayName: Login to the Docker Hardened Images registry -- Login no registry do Docker Hardened Images
+    - script: |
+        docker pull $(dockerHardenedImage)
+      displayName: Download hardened image -- Baixar imagem hardened
+    - script: |
+        docker images
+      displayName: Display images in the environment -- Exibir imagens no ambiente
+    - script: |
+        curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
+        docker scout
+      displayName: Install Docker Scout -- Instalar o docker scout
+    - script: |
+        echo $(DOCKER_HUB_USER)
+        echo $(DOCKER_HUB_PAT) | docker login -u $(DOCKER_HUB_USER) --password-stdin
+      displayName: Login to Docker Hub (to use the docker scout utility) -- Login no Docker Hub (para uso do utilitario docker scout)
+    - script: |
+        docker scout
+      displayName: Testing the Docker Scout installation -- Testar instalacao do Docker Scout
+    - script: |
+        docker scout compare --help
+      displayName: Display options for the *docker scout compare* command. -- Exibir opcoes para o comando *docker scout compare*
+    - script: |
+        docker scout compare $(dockerHardenedImage) \
+            --to $(commonImage) \
+            --platform linux/amd64 \
+            --ignore-unchanged
+      displayName: Perform a comparison between images -- Executar comparativo entre imagens
+    - script: |
+        docker scout compare $(dockerHardenedImage) \
+            --to $(commonImage) \
+            --format markdown --output scan-image.md \
+            --platform linux/amd64 \
+            --ignore-unchanged
+      displayName: Perform image comparisons and export results to Markdown -- Executar comparativo entre imagens exportando resultados para Markdown
+    - script: |
+        pwd
+        echo
+        ls -l
+      displayName: Display files in the root directory after running Docker Scout -- Exibir arquivos no diretorio-raiz apos execucao do Docker Scout
+    - task: PublishMarkdownReports@1
+      inputs:
+        contentPath: '$(Build.SourcesDirectory)'
+        indexFile: 'scan-image.md'
+      displayName: Publication of Markdown report -- Publicacao de relatorio Markdown
