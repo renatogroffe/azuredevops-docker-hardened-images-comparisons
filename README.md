@@ -15,6 +15,8 @@ Exemplo de execuçao do pipeline com imagens do **.NET 10**:
 
 *Example of pipeline execution with .NET 10 images:*
 
+![.NET 10](img/hardened-02.png)
+
 Exemplo de execuçao do pipeline com imagens do **Node 24**:
 
 *Example of pipeline execution using Node.24 images:*
