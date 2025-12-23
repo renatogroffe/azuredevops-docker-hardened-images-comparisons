@@ -26,3 +26,5 @@ Exemplo de execuçao do pipeline com imagens do **Node 24**:
 Exemplo de execuçao do pipeline com imagens do **Go 1.24**:
 
 *Example of pipeline execution with Go 1.24 images:*
+
+![Node 24](img/hardened-04.png)
